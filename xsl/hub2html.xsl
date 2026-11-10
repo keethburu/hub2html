@@ -409,7 +409,8 @@
                        | dbk:appendix/dbk:title | dbk:appendix/dbk:info/dbk:title 
                        | dbk:part/dbk:title | dbk:part/dbk:info/dbk:title
                        | dbk:partintro/dbk:title | dbk:partintro/dbk:info/dbk:title  
-                       | dbk:book/dbk:title | dbk:book/dbk:info/dbk:title" mode="hub2htm-default">
+                       | dbk:book/dbk:title | dbk:book/dbk:info/dbk:title"
+                mode="hub2htm-default" priority="1">
     <xsl:element name="h1">
       <xsl:apply-templates select="." mode="class-att"/>
       <xsl:attribute name="title" select="string-join(.//text()[not(ancestor::dbk:indexterm)],' ')"/>
