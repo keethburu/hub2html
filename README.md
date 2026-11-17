@@ -15,9 +15,8 @@ Connect an empty sequence to the `paths` port to use the default stylesheet.
 
 ## Development
 
-This fork gives structural headings precedence when both the structural and
-metadata title rules match. The focused regression also checks that empty
-titles are suppressed and section headings retain their depth.
+This fork gives structural titles precedence when both the structural and
+metadata title rules match.
 
 To run the regression, install [`tests/requirements.txt`](tests/requirements.txt)
 in a Python environment and provide a checkout of `transpect/xslt-util` at
@@ -29,7 +28,10 @@ python tests/title_priority.py --xslt-util /path/to/xslt-util
 
 The test runs the real `main` template with pinned SaxonC-HE 12.9 and local
 catalog resolution for the stylesheet dependencies. It rejects ambiguous title
-matches, checks structural headings and their inline language/style context,
-and checks empty titles, metadata, and section depth. CI additionally exports
-pristine upstream `ee25fb16ce4819ef6ab880889e9761d8e5768ef3` and passes it via
-`--baseline-root /path/to/export` to reproduce `XTDE0540` as a negative control.
+matches and checks that structural headings retain their language and inline
+formatting, empty titles are suppressed, the document metadata title stays in
+the XHTML head, and section headings retain their depth.
+
+CI also exports pristine upstream `ee25fb16ce4819ef6ab880889e9761d8e5768ef3`
+and passes it via `--baseline-root /path/to/export` to reproduce `XTDE0540` as
+a negative control.
