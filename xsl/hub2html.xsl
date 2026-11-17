@@ -401,6 +401,8 @@
     <xsl:call-template name="create-section"/>
   </xsl:template>
 
+  <!-- Keep the metadata title rule available beyond the document root.
+       Explicit priority selects this rule where both match, including a root book's info/title. -->
   <xsl:template match="  dbk:toc/dbk:title | dbk:toc/dbk:info/dbk:title 
                        | dbk:acknowledgements/dbk:title | dbk:acknowledgements/dbk:info/dbk:title 
                        | dbk:preface/dbk:title | dbk:preface/dbk:info/dbk:title  
