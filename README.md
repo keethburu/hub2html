@@ -12,8 +12,6 @@ the original Hub2HTML project.
 Import [`xpl/hub2html.xpl`](xpl/hub2html.xpl) in a transpect XProc pipeline and
 invoke the `hub2htm:convert` step with the Hub document on its `source` port.
 Connect an empty sequence to the `paths` port to use the default stylesheet.
-The `target` option defaults to `EPUB2`, and `sections="yes"` enables HTML
-section elements for the DocBook hierarchy.
 
 ## Development
 
