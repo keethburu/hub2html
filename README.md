@@ -1,11 +1,24 @@
 # hub2html
-Converts Hub XML to XHTML
 
-Structural titles (including `info/title` inside a chapter, book, or other
-structural element) take precedence over the general metadata-title rule.
-Empty titles remain suppressed; section headings retain their depth.
+Hub2HTML converts Hub 1.1 and later XML documents to XHTML. It maps document
+structure and content such as headings, lists, tables, figures, and references
+for HTML and EPUB workflows.
 
-To run the focused conversion regression, install `tests/requirements.txt`
+## Using Hub2HTML
+
+Import [`xpl/hub2html.xpl`](xpl/hub2html.xpl) in a transpect XProc pipeline and
+invoke the `hub2htm:convert` step with the Hub document on its `source` port.
+Connect an empty sequence to the `paths` port to use the default stylesheet.
+The `target` option defaults to `EPUB2`, and `sections="yes"` enables HTML
+section elements for the DocBook hierarchy.
+
+## Development
+
+This fork gives structural headings precedence when both the structural and
+metadata title rules match. The focused regression also checks that empty
+titles are suppressed and section headings retain their depth.
+
+To run the regression, install [`tests/requirements.txt`](tests/requirements.txt)
 in a Python environment and provide a checkout of `transpect/xslt-util` at
 `5d78dff50bf197e7973c5dcf92b921e08c4ae6cc`:
 
