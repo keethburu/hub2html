@@ -4,6 +4,9 @@ Hub2HTML converts Hub 1.1 and later XML documents to XHTML. It maps document
 structure and content such as headings, lists, tables, figures, and references
 for HTML and EPUB workflows.
 
+This repository is a fork of [transpect/hub2html](https://github.com/transpect/hub2html),
+the original Hub2HTML project.
+
 ## Using Hub2HTML
 
 Import [`xpl/hub2html.xpl`](xpl/hub2html.xpl) in a transpect XProc pipeline and
