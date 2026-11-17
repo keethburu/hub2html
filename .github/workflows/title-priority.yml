@@ -2,8 +2,10 @@ name: Structural title priority
 
 on:
   pull_request:
+    paths-ignore: ['README.md']
   push:
     branches: ['fm/**']
+    paths-ignore: ['README.md']
 
 permissions:
   contents: read

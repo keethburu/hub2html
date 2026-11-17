@@ -1,11 +1,24 @@
 # hub2html
-Converts Hub XML to XHTML
 
-Structural titles (including `info/title` inside a chapter, book, or other
-structural element) take precedence over the general metadata-title rule.
-Empty titles remain suppressed; section headings retain their depth.
+Hub2HTML converts Hub 1.1 and later XML documents to XHTML. It maps document
+structure and content such as headings, lists, tables, figures, and references
+for HTML and EPUB workflows.
 
-To run the focused conversion regression, install `tests/requirements.txt`
+This repository is a fork of [transpect/hub2html](https://github.com/transpect/hub2html),
+the original Hub2HTML project.
+
+## Using Hub2HTML
+
+Import [`xpl/hub2html.xpl`](xpl/hub2html.xpl) in a transpect XProc pipeline and
+invoke the `hub2htm:convert` step with the Hub document on its `source` port.
+Connect an empty sequence to the `paths` port to use the default stylesheet.
+
+## Development
+
+This fork gives structural titles precedence when both the structural and
+metadata title rules match.
+
+To run the regression, install [`tests/requirements.txt`](tests/requirements.txt)
 in a Python environment and provide a checkout of `transpect/xslt-util` at
 `5d78dff50bf197e7973c5dcf92b921e08c4ae6cc`:
 
@@ -15,7 +28,10 @@ python tests/title_priority.py --xslt-util /path/to/xslt-util
 
 The test runs the real `main` template with pinned SaxonC-HE 12.9 and local
 catalog resolution for the stylesheet dependencies. It rejects ambiguous title
-matches, checks structural headings and their inline language/style context,
-and checks empty titles, metadata, and section depth. CI additionally exports
-pristine upstream `ee25fb16ce4819ef6ab880889e9761d8e5768ef3` and passes it via
-`--baseline-root /path/to/export` to reproduce `XTDE0540` as a negative control.
+matches and checks that structural headings retain their language and inline
+formatting, empty titles are suppressed, the document metadata title stays in
+the XHTML head, and section headings retain their depth.
+
+CI also exports pristine upstream `ee25fb16ce4819ef6ab880889e9761d8e5768ef3`
+and passes it via `--baseline-root /path/to/export` to reproduce `XTDE0540` as
+a negative control.
