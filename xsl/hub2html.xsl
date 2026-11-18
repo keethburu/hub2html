@@ -218,6 +218,9 @@
                                           'part', 'partintro')]" 
     name="build-html-root" mode="hub2htm-default">
     <html>
+      <xsl:if test="@xml:lang">
+        <xsl:attribute name="lang" select="@xml:lang"/>
+      </xsl:if>
       <head>
         <xsl:if test="tokenize($TARGET, '\s+') = ('EPUB3', 'HTML5')">
           <meta charset="UTF-8"/>  
