@@ -1,14 +1,13 @@
-"""Execute the structural-title contract through hub2html's main template."""
+"""Check XHTML output through hub2html's main template."""
 
 import argparse
-from pathlib import Path
 import tempfile
 import unittest
 import xml.etree.ElementTree as ET
+from pathlib import Path
 from xml.sax.saxutils import quoteattr
 
-from saxonche import PySaxonApiError, PySaxonProcessor
-
+from saxonche import PySaxonApiError, PySaxonProcessor, PyXsltExecutable
 
 DBK = "http://docbook.org/ns/docbook"
 HTML = "http://www.w3.org/1999/xhtml"
@@ -19,11 +18,12 @@ STRUCTURES = (
 )
 
 
-def hub(content):
+def hub(content: str, *, language: str | None = "en") -> str:
+    language_attribute = "" if language is None else f" xml:lang={quoteattr(language)}"
     return (
-        f'<hub xmlns="{DBK}" xml:lang="en">'
-        '<info><title>Document metadata</title></info>'
-        f'{content}<para>Retained body.</para></hub>'
+        f'<hub xmlns="{DBK}"{language_attribute}>'
+        "<info><title>Document metadata</title></info>"
+        f"{content}<para>Retained body.</para></hub>"
     )
 
 
@@ -61,9 +61,17 @@ class TitlePriority(unittest.TestCase):
             )
         )
 
-    def convert(self, content, executable=None):
+    def convert(
+        self,
+        content: str,
+        executable: PyXsltExecutable | None = None,
+        *,
+        language: str | None = "en",
+    ) -> ET.Element:
         executable = executable if executable is not None else self.fixed
-        executable.set_global_context_item(xdm_item=self.processor.parse_xml(xml_text=hub(content)))
+        executable.set_global_context_item(
+            xdm_item=self.processor.parse_xml(xml_text=hub(content, language=language))
+        )
         return ET.fromstring(executable.call_template_returning_string("main"))
 
     def test_structural_titles(self):
@@ -117,6 +125,51 @@ class TitlePriority(unittest.TestCase):
         )
         self.assertEqual(output.find(f'.//{{{HTML}}}h1').text, 'First')
         self.assertEqual(output.find(f'.//{{{HTML}}}h2').text, 'Second')
+
+    def test_html_root_uses_source_language(self) -> None:
+        for language in ("fr-CA", "ja", None):
+            with self.subTest(language=language):
+                output = self.convert("", language=language)
+                self.assertEqual(output.get("lang"), language)
+                self.assertNotIn(f"{{{XML}}}lang", output.attrib)
+
+    def test_part_chapter_section_depth_unchanged(self) -> None:
+        output = self.convert(
+            "<part><title>Part</title><chapter><info><title>Chapter</title></info>"
+            "<section><title>First</title><section><info><title>Second</title></info>"
+            "</section></section></chapter></part>"
+        )
+        body = output.find(f"{{{HTML}}}body")
+        assert body is not None
+        heading_tags = {f"{{{HTML}}}h{level}" for level in range(1, 7)}
+        headings = [
+            (element.tag.removeprefix(f"{{{HTML}}}"), element.text)
+            for element in body.iter()
+            if element.tag in heading_tags
+        ]
+        self.assertEqual(
+            headings,
+            [("h1", "Part"), ("h1", "Chapter"), ("h1", "First"), ("h2", "Second")],
+        )
+
+    def test_unstyled_abstract_keeps_text(self) -> None:
+        output = self.convert(
+            "<chapter><info><abstract><para>Retained abstract text.</para>"
+            "</abstract></info></chapter>"
+        )
+        paragraphs = output.findall(f"{{{HTML}}}body//{{{HTML}}}p")
+        self.assertIn(
+            "Retained abstract text.", [paragraph.text for paragraph in paragraphs]
+        )
+
+    def test_subtitle_class_normalization(self) -> None:
+        output = self.convert(
+            '<chapter><info><subtitle role="Sub.Title:Marked">A subtitle</subtitle></info></chapter>'
+        )
+        subtitle = output.find(f"{{{HTML}}}body//{{{HTML}}}p")
+        assert subtitle is not None
+        self.assertEqual(subtitle.text, "A subtitle")
+        self.assertEqual(subtitle.get("class"), "Sub_Title_Marked")
 
     def test_pristine_baseline_negative_control(self):
         if self.baseline is None:
