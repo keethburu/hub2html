@@ -2,8 +2,9 @@
 
 ## Local setup
 
-Install the pinned SaxonC-HE dependency in a Python environment and check out
-`transpect/xslt-util` at `5d78dff50bf197e7973c5dcf92b921e08c4ae6cc`.
+Check out `transpect/xslt-util` at the revision pinned in the
+[CI workflow](../.github/workflows/title-priority.yml#L22-L27). Use a Python
+environment to install the pinned SaxonC-HE dependency and run the suite.
 Run these commands from the repository root.
 
 ```sh
@@ -23,10 +24,10 @@ root has no `xml:lang`, the XHTML root has no `lang` attribute.
 
 ## CI negative control
 
-The [CI workflow](../.github/workflows/title-priority.yml) exports pristine
-upstream revision `ee25fb16ce4819ef6ab880889e9761d8e5768ef3` and adds
-`--baseline-root /path/to/export` to the test command to reproduce `XTDE0540`
-as a negative control.
+To reproduce the ambiguous title match (`XTDE0540`), export the pristine
+upstream revision used by the
+[CI negative control](../.github/workflows/title-priority.yml#L32-L38) and
+add `--baseline-root /path/to/export` to the test command.
 
 ## Reproduce the full-upstream regressions
 
