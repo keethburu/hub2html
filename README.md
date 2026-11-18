@@ -9,8 +9,10 @@ This repository is a fork of the original [transpect/hub2html](https://github.co
 
 ## Using Hub2HTML
 
-Import [`xpl/hub2html.xpl`](xpl/hub2html.xpl) in an XProc 1.0 pipeline and
-invoke `hub2htm:convert` (`http://transpect.io/hub2htm`).
+Configure your transpect XProc 1.0 environment with the
+[Hub2HTML XML catalog](xmlcatalog/catalog.xml) and the XML catalogs for its
+dependencies. In your pipeline, import [`xpl/hub2html.xpl`](xpl/hub2html.xpl)
+and invoke `hub2htm:convert` (`http://transpect.io/hub2htm`).
 
 - Pass the Hub document on the `source` port.
 - Pass transpect cascade paths on the `paths` port to select a stylesheet.
