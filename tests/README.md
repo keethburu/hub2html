@@ -2,7 +2,7 @@
 
 Use the [pinned xslt-util checkout](../README.md#development) from the regular
 test setup. From the maintained fork, run its tests against a temporary
-checkout of the full upstream tip.
+checkout of the pinned full upstream revision.
 
 ```sh
 upstream=$(mktemp -d)
@@ -24,6 +24,3 @@ checks show four differences.
   plain `lang` in place of `xml:lang`.
 - `test_subtitle_class_normalization` gets `Sub.Title_Marked` instead of
   `Sub_Title_Marked`.
-
-The separate pristine-baseline check runs when `--baseline-root` points to an
-export of `ee25fb16ce4819ef6ab880889e9761d8e5768ef3`.
