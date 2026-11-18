@@ -1,40 +1,28 @@
-# hub2html
+# Hub2HTML
 
-Hub2HTML converts Hub 1.1 and later XML documents to XHTML. It maps document
-structure and content such as headings, lists, tables, figures, and references
-for HTML and EPUB workflows.
+Hub2HTML converts Hub 1.1 and later XML documents to XHTML. It is the
+rendering step in transpect HTML and EPUB workflows, turning Hub headings,
+lists, tables, figures, and references into XHTML that downstream steps can
+use.
 
-This repository is a fork of [transpect/hub2html](https://github.com/transpect/hub2html),
-the original Hub2HTML project.
+This repository is a fork of the original [transpect/hub2html](https://github.com/transpect/hub2html) project.
 
 ## Using Hub2HTML
 
-Import [`xpl/hub2html.xpl`](xpl/hub2html.xpl) in a transpect XProc pipeline and
-invoke the `hub2htm:convert` step with the Hub document on its `source` port.
-Connect an empty sequence to the `paths` port to use the default stylesheet.
+Configure your transpect XProc 1.0 environment with the
+[Hub2HTML XML catalog](xmlcatalog/catalog.xml) and the XML catalogs for its
+dependencies. In your pipeline, import [`xpl/hub2html.xpl`](xpl/hub2html.xpl)
+and invoke `hub2htm:convert` (`http://transpect.io/hub2htm`).
 
-The converter copies the source root's `xml:lang` value to the `lang` attribute
-on the XHTML `<html>` element. It omits `lang` when the source root has no
-`xml:lang`.
+- Pass the Hub document on the `source` port.
+- Pass transpect cascade paths on the `paths` port to select a stylesheet.
+  Bind the port with `<p:input port="paths"><p:empty/></p:input>` to use the
+  default stylesheet.
+- Supply any additional stylesheet parameters on the `other-params` parameter
+  port.
 
-## Development
+Read the converted XHTML from the `result` port.
 
-This fork gives structural titles precedence when both the structural and
-metadata title rules match.
+## Contributing
 
-To run the regression suite, install [`tests/requirements.txt`](tests/requirements.txt)
-in a Python environment and provide a checkout of `transpect/xslt-util` at
-`5d78dff50bf197e7973c5dcf92b921e08c4ae6cc`:
-
-```sh
-python tests/title_priority.py --xslt-util /path/to/xslt-util
-```
-
-The suite runs the real `main` template with the pinned SaxonC-HE dependency
-and resolves stylesheet dependencies through a local catalog. See the
-[full-upstream regression reproduction](tests/README.md) for compatibility
-checks against the pinned upstream revision.
-
-CI also exports pristine upstream `ee25fb16ce4819ef6ab880889e9761d8e5768ef3`
-and passes it via `--baseline-root /path/to/export` to reproduce `XTDE0540` as
-a negative control.
+See the [regression test guide](tests/README.md) for setup and commands.

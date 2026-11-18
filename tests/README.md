@@ -1,7 +1,38 @@
-# Reproduce the full-upstream regressions
+# Hub2HTML regression tests
 
-Use the [pinned xslt-util checkout](../README.md#development) from the regular
-test setup. From the maintained fork, run its tests against a temporary
+## Local setup
+
+Check out `transpect/xslt-util` at the revision pinned in the
+[CI workflow](../.github/workflows/title-priority.yml#L22-L27). Use a Python
+environment to install the pinned SaxonC-HE dependency and run the suite.
+Run these commands from the repository root.
+
+```sh
+python -m pip install -r tests/requirements.txt
+python tests/title_priority.py --xslt-util /path/to/xslt-util
+```
+
+The suite runs the converter's `main` template and resolves stylesheet
+dependencies through a local XML catalog.
+
+## What the suite covers
+
+When both structural and metadata title rules match, structural titles take
+precedence. The root language test checks that the converter copies the source
+root's `xml:lang` value to `lang` on the XHTML `<html>` element. If the source
+root has no `xml:lang`, the XHTML root has no `lang` attribute.
+
+## CI negative control
+
+To reproduce the ambiguous title match (`XTDE0540`), export the pristine
+upstream revision used by the
+[CI negative control](../.github/workflows/title-priority.yml#L32-L38) and
+add `--baseline-root /path/to/export` to the test command.
+
+## Reproduce the full-upstream regressions
+
+Use the pinned xslt-util checkout from [local setup](#local-setup).
+From the maintained fork, run its tests against a temporary
 checkout of the pinned full upstream revision.
 
 ```sh
