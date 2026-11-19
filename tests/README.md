@@ -22,6 +22,24 @@ precedence. The root language test checks that the converter copies the source
 root's `xml:lang` value to `lang` on the XHTML `<html>` element. If the source
 root has no `xml:lang`, the XHTML root has no `lang` attribute.
 
+Author metadata uses spaces between structured name parts, including first,
+middle, and final `othername` components. The tests cover authored whitespace,
+lineage punctuation, empty parts, inline formatting and language, graphics,
+and hidden content. Prose names and cooked bibliography punctuation retain
+their existing behavior. The metadata scope includes authors under `info`,
+`biblioentry`, and `biblioset`, grouped authors, and revision authors within
+those metadata containers.
+
+The hidden-name cases check the inline declarations and simple named Hub
+classes emitted by the converter, including disabled Hub rules and inline
+`display` overrides. Name-boundary checks do not resolve external stylesheets
+or arbitrary CSS selectors. SVG display overrides are covered independently.
+
+The `othername` addition derives from the corresponding change in
+[the upstream commit](https://github.com/transpect/hub2html/commit/0b2b1ff7e199562f0995b9764d21d58d2cec64d2).
+The fork retains its existing title, language, abstract, heading-depth, and
+subtitle behavior.
+
 ## CI negative control
 
 To reproduce the ambiguous title match (`XTDE0540`), export the pristine
