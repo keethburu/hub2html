@@ -11,6 +11,7 @@ from saxonche import PySaxonApiError, PySaxonProcessor, PyXsltExecutable
 
 DBK = "http://docbook.org/ns/docbook"
 HTML = "http://www.w3.org/1999/xhtml"
+CSS = "http://www.w3.org/1996/css"
 XML = "http://www.w3.org/XML/1998/namespace"
 STRUCTURES = (
     "toc", "acknowledgements", "preface", "chapter", "colophon",
@@ -170,6 +171,481 @@ class TitlePriority(unittest.TestCase):
         assert subtitle is not None
         self.assertEqual(subtitle.text, "A subtitle")
         self.assertEqual(subtitle.get("class"), "Sub_Title_Marked")
+
+    def test_author_othername_spacing(self) -> None:
+        output = self.convert(
+            "<chapter><info><authorgroup>"
+            "<author><personname><othername>Ada</othername><surname>Lovelace</surname></personname></author>"
+            "<author><personname><firstname>Ada</firstname><othername>M.</othername>"
+            "<surname>Lovelace</surname></personname></author>"
+            "<author><personname><firstname>Ada</firstname><surname>Lovelace</surname>"
+            "<othername>Byron</othername></personname></author>"
+            "</authorgroup></info></chapter>"
+        )
+        authors = output.findall(f'.//{{{HTML}}}p[@class="author"]')
+        self.assertEqual(
+            ["".join(author.itertext()) for author in authors],
+            ["Ada Lovelace", "Ada M. Lovelace", "Ada Lovelace Byron"],
+        )
+        self.assertEqual(output.findall(f".//{{{DBK}}}othername"), [])
+
+    def test_author_name_empty_and_styled_edge_parts(self) -> None:
+        executable = self.fixed.clone()
+        executable.set_property("!indent", "no")
+        cases = (
+            (
+                "<othername/><firstname>Ada</firstname><surname>Lovelace</surname>",
+                "Ada Lovelace",
+            ),
+            (
+                "<firstname>Ada</firstname><othername/><surname>Lovelace</surname>",
+                "Ada Lovelace",
+            ),
+            (
+                "<firstname>Ada</firstname><surname>Lovelace</surname><othername/>",
+                "Ada Lovelace",
+            ),
+            (
+                '<othername css:display="none"> M. </othername><surname>Lovelace</surname>',
+                "Lovelace",
+            ),
+            (
+                '<firstname>Ada</firstname><othername css:display="none"> M. </othername>',
+                "Ada",
+            ),
+            (
+                "<honorific>Dr.</honorific><givenname>Ada</givenname><othername>M.</othername><surname>Lovelace</surname>",
+                "Dr. Ada M. Lovelace",
+            ),
+        )
+        for source, expected in cases:
+            with self.subTest(source=source):
+                output = self.convert(
+                    f'<chapter xmlns:css="{CSS}"><info><author><personname>{source}'
+                    "</personname></author></info></chapter>",
+                    executable,
+                )
+                author = output.find(f'.//{{{HTML}}}p[@class="author"]')
+                assert author is not None
+                for hidden in author.findall('.//*[@style="display: none"]'):
+                    hidden.text = None
+                    del hidden[:]
+                self.assertEqual("".join(author.itertext()), expected)
+
+    def test_revision_author_uses_metadata_spacing(self) -> None:
+        output = self.convert(
+            "<chapter><info><revhistory><revision><date>2026-01-01</date>"
+            "<author><personname><firstname>Ada</firstname><othername>M.</othername>"
+            "<surname>Lovelace</surname></personname></author>"
+            "</revision></revhistory></info></chapter>"
+        )
+        author = output.find(f'.//{{{DBK}}}revision/{{{HTML}}}p[@class="author"]')
+        assert author is not None
+        self.assertEqual("".join(author.itertext()), "Ada M. Lovelace")
+
+    def test_author_name_preserves_explicit_separators(self) -> None:
+        executable = self.fixed.clone()
+        executable.set_property("!indent", "no")
+        comment = (
+            '<phrase role="hub:foreign">'
+            '<tr:comment xmlns:tr="http://transpect.io">{}</tr:comment></phrase>'
+        )
+        cases = [
+            (
+                "<othername>M.&#xA0;</othername><surname>Lovelace</surname>",
+                "M.\u00a0Lovelace",
+            ),
+            (
+                "<othername>M.</othername><surname>&#xA0;Lovelace</surname>",
+                "M.\u00a0Lovelace",
+            ),
+            (
+                '<firstname><emphasis role="Name">Ada</emphasis>&#xA0;</firstname>'
+                "<surname>Lovelace</surname>",
+                "Ada\u00a0Lovelace",
+            ),
+            (
+                "<firstname>Ada</firstname>"
+                '<surname>&#xA0;<emphasis role="Name">Lovelace</emphasis></surname>',
+                "Ada\u00a0Lovelace",
+            ),
+            ("<othername>M.</othername> <surname>Lovelace</surname>", "M. Lovelace"),
+            (
+                "<firstname>Ada&#x202F;</firstname><othername>M.</othername>",
+                "Ada\u202fM.",
+            ),
+            ("<othername>John</othername><lineage>, Jr.</lineage>", "John, Jr."),
+            (
+                "<surname>Lovelace</surname><firstname>, Ada</firstname>",
+                "Lovelace , Ada",
+            ),
+            (
+                "<firstname>Ada&#xA0;</firstname><othername/>"
+                "<surname>Lovelace</surname>",
+                "Ada\u00a0Lovelace",
+            ),
+            (
+                "<firstname>Ada</firstname><othername/><surname>Lovelace</surname>",
+                "Ada Lovelace",
+            ),
+            (
+                "<othername>John</othername><surname/><lineage>, Jr.</lineage>",
+                "John, Jr.",
+            ),
+            (
+                f"<firstname>Ada{comment.format('note ')}</firstname>"
+                "<surname>Lovelace</surname>",
+                "Ada Lovelace",
+            ),
+            (
+                "<firstname>Ada</firstname>"
+                f"<surname>{comment.format(' note')}Lovelace</surname>",
+                "Ada Lovelace",
+            ),
+        ]
+        for marker in (
+            "<indexterm><primary>Lovelace</primary></indexterm>",
+            "<footnote><para>Former pen name.</para></footnote>",
+            comment.format("note"),
+        ):
+            cases.extend(
+                (
+                    (
+                        f"<othername>M.&#xA0;{marker}</othername>"
+                        "<surname>Lovelace</surname>",
+                        "M.\u00a0Lovelace",
+                    ),
+                    (
+                        "<othername>M.</othername>"
+                        f"<surname>{marker}&#xA0;Lovelace</surname>",
+                        "M.\u00a0Lovelace",
+                    ),
+                    (
+                        f"<othername>John</othername><lineage>{marker}, Jr.</lineage>",
+                        "John, Jr.",
+                    ),
+                )
+            )
+        for source, expected in cases:
+            with self.subTest(source=source):
+                output = self.convert(
+                    f"<chapter><info><author><personname>{source}"
+                    "</personname></author></info></chapter>",
+                    executable,
+                )
+                authors = output.findall(f'.//{{{HTML}}}p[@class="author"]')
+                self.assertEqual(
+                    ["".join(author.itertext()) for author in authors], [expected]
+                )
+
+    def test_author_name_spacing_ignores_hidden_content(self) -> None:
+        executable = self.fixed.clone()
+        executable.set_property("!indent", "no")
+        hidden_phrase = '<phrase css:display="none"> note </phrase>'
+        cases = (
+            ('<othername css:display="none"> M. </othername>', 1, "Ada Lovelace"),
+            ('<othername css:display="inline"> M. </othername>', 0, "Ada M. Lovelace"),
+            (f"<othername>{hidden_phrase}</othername>", 1, "Ada Lovelace"),
+            (
+                '<othername><emphasis css:display="none"> M. </emphasis></othername>',
+                1,
+                "Ada Lovelace",
+            ),
+            (
+                '<othername><emphasis css:display="inline"> M. </emphasis></othername>',
+                0,
+                "Ada M. Lovelace",
+            ),
+            ('<lineage css:display="none"> , Jr. </lineage>', 1, "Ada Lovelace"),
+            (
+                '<othername><phrase css:display="none"> </phrase></othername>',
+                0,
+                "Ada Lovelace",
+            ),
+        )
+        for middle, hidden_count, expected in cases:
+            with self.subTest(middle=middle):
+                output = self.convert(
+                    f'<chapter xmlns:css="{CSS}"><info><author><personname>'
+                    f"<firstname>Ada</firstname>{middle}<surname>Lovelace</surname>"
+                    "</personname></author></info></chapter>",
+                    executable,
+                )
+                author = output.find(f'.//{{{HTML}}}p[@class="author"]')
+                assert author is not None
+                hidden_elements = author.findall('.//*[@style="display: none"]')
+                self.assertEqual(len(hidden_elements), hidden_count)
+                for hidden in hidden_elements:
+                    hidden.text = None
+                    del hidden[:]
+                self.assertEqual("".join(author.itertext()), expected)
+
+    def test_author_name_spacing_around_inline_glyphs(self) -> None:
+        executable = self.fixed.clone()
+        executable.set_property("!indent", "no")
+        svg = "http://www.w3.org/2000/svg"
+        glyph = (
+            "<inlinemediaobject><imageobject><imagedata>"
+            f'<svg xmlns="{svg}" viewBox="0 0 3 4"><path d="M0 0h3v4H0z"/></svg>'
+            "</imagedata></imageobject></inlinemediaobject>"
+        )
+        output = self.convert(
+            "<chapter><info><author><personname><honorific>Dr.</honorific>"
+            f"<firstname>{glyph}</firstname><surname>Lovelace</surname>"
+            f"<othername>{glyph}</othername><lineage>, Jr.</lineage>"
+            "</personname></author></info></chapter>",
+            executable,
+        )
+        author = output.find(f'.//{{{HTML}}}p[@class="author"]')
+        assert author is not None
+        self.assertEqual(author.text, "Dr. ")
+        self.assertEqual(
+            [element.tail for element in author.findall(f"{{{svg}}}svg")],
+            [" Lovelace ", None],
+        )
+        self.assertEqual(author.findtext(f"{{{DBK}}}lineage"), ", Jr.")
+
+    def test_author_name_spacing_ignores_hidden_svg(self) -> None:
+        executable = self.fixed.clone()
+        executable.set_property("!indent", "no")
+        svg = "http://www.w3.org/2000/svg"
+        glyph = (
+            "<inlinemediaobject><imageobject><imagedata>"
+            f'<svg xmlns="{svg}" display="none"><path d="M0 0h3v4H0z"/></svg>'
+            "</imagedata></imageobject></inlinemediaobject>"
+        )
+        output = self.convert(
+            "<chapter><info><author><personname>"
+            f"<firstname>Ada&#xA0;{glyph}</firstname><surname>Lovelace</surname>"
+            f"<lineage>{glyph}, Jr.</lineage></personname></author></info></chapter>",
+            executable,
+        )
+        author = output.find(f'.//{{{HTML}}}p[@class="author"]')
+        assert author is not None
+        self.assertEqual(len(author.findall(f'.//{{{svg}}}svg[@display="none"]')), 2)
+        self.assertEqual("".join(author.itertext()), "Ada\u00a0Lovelace, Jr.")
+
+    def test_author_name_spacing_uses_inline_image_reference(self) -> None:
+        executable = self.fixed.clone()
+        executable.set_property("!indent", "no")
+        for overwrite, prefix in (("no", ""), ("yes", "./")):
+            executable.set_parameter(
+                "overwrite-image-paths", self.processor.make_string_value(overwrite)
+            )
+            for fileref, expected in (
+                ("", "M.\u00a0Lovelace, Jr."),
+                ("glyph.png", "M.\u00a0 Lovelace , Jr."),
+            ):
+                with self.subTest(overwrite=overwrite, fileref=fileref):
+                    media = (
+                        "<inlinemediaobject><imageobject>"
+                        f'<imagedata fileref="{fileref}"/>'
+                        "</imageobject></inlinemediaobject>"
+                    )
+                    output = self.convert(
+                        "<chapter><info><author><personname>"
+                        f"<othername>M.&#xA0;{media}</othername>"
+                        f"<surname>Lovelace</surname><lineage>{media}, Jr.</lineage>"
+                        "</personname></author></info></chapter>",
+                        executable,
+                    )
+                    author = output.find(f'.//{{{HTML}}}p[@class="author"]')
+                    assert author is not None
+                    images = author.findall(f".//{{{HTML}}}img")
+                    self.assertEqual(
+                        [image.get("src") for image in images], [prefix + fileref] * 2
+                    )
+                    self.assertEqual("".join(author.itertext()), expected)
+
+    def test_author_name_preserves_tabs_and_breaks(self) -> None:
+        executable = self.fixed.clone()
+        executable.set_property("!indent", "no")
+        for marker, tag, text in (("<tab/>", "span", "\t"), ("<br/>", "br", None)):
+            for left, right in ((marker, ""), ("", marker)):
+                with self.subTest(marker=marker, before_boundary=bool(left)):
+                    output = self.convert(
+                        "<chapter><info><author><personname>"
+                        f"<othername>M.{left}</othername>"
+                        f"<surname>{right}Lovelace</surname>"
+                        "</personname></author></info></chapter>",
+                        executable,
+                    )
+                    author = output.find(f'.//{{{HTML}}}p[@class="author"]')
+                    assert author is not None
+                    separator = author.find(f"{{{HTML}}}{tag}")
+                    assert separator is not None
+                    self.assertEqual(
+                        (author.text, separator.text, separator.tail),
+                        ("M.", text, "Lovelace"),
+                    )
+
+    def test_prose_names_keep_existing_spacing(self) -> None:
+        output = self.convert(
+            "<para><personname><othername>d\u2019</othername>"
+            "<surname>Artagnan</surname></personname></para>"
+            "<para><personname><firstname>Ada&#xA0;</firstname>"
+            "<surname>Lovelace</surname></personname></para>"
+            "<para><author><personname><othername>d\u2019</othername>"
+            "<surname>Artagnan</surname></personname></author></para>"
+            "<para><author><personname><firstname>Ada&#xA0;</firstname>"
+            "<surname>Lovelace</surname></personname></author></para>"
+        )
+        paragraphs = output.findall(f"{{{HTML}}}body/{{{HTML}}}p")
+        expected = ["d\u2019Artagnan", "Ada\u00a0 Lovelace"]
+        self.assertEqual(
+            ["".join(paragraph.itertext()) for paragraph in paragraphs[:2]], expected
+        )
+        inline = output.findall(
+            f'{{{HTML}}}body/{{{HTML}}}p/{{{HTML}}}p[@class="author"]'
+        )
+        self.assertEqual(["".join(author.itertext()) for author in inline], expected)
+
+    def test_author_othername_keeps_inline_formatting(self) -> None:
+        output = self.convert(
+            "<chapter><info><author><personname><firstname>Ada</firstname>"
+            f'<othername xmlns:css="{CSS}" xml:lang="ja" role="Name:Alternate" '
+            'css:color="red" css:font-style="italic">花子</othername>'
+            "<surname>Yamada</surname></personname></author></info></chapter>"
+        )
+        author = output.find(f'.//{{{HTML}}}p[@class="author"]')
+        self.assertEqual("".join(author.itertext()), "Ada 花子 Yamada")
+        alternate = author.find(f"{{{HTML}}}span")
+        self.assertIsNotNone(alternate)
+        self.assertEqual(alternate.get(f"{{{XML}}}lang"), "ja")
+        self.assertEqual(alternate.get("class"), "Name_Alternate")
+        self.assertEqual(alternate.get("style"), "color: red")
+        self.assertEqual(alternate.findtext(f"{{{HTML}}}i"), "花子")
+        self.assertEqual(alternate.tail, " Yamada")
+
+    def test_bibliomixed_othername_preserves_punctuation(self) -> None:
+        output = self.convert(
+            "<bibliography><bibliomixed><othername>Byron</othername>, "
+            "<citetitle>Memoirs</citetitle></bibliomixed></bibliography>"
+        )
+        entry = output.find(f'.//{{{HTML}}}div[@class="bibliography"]/{{{HTML}}}p')
+        self.assertEqual("".join(entry.itertext()), "Byron, Memoirs")
+
+    def test_endnote_bibliography_keeps_author_spacing(self) -> None:
+        output = self.convert(
+            "<para>Reference<footnote><bibliolist><biblioentry>"
+            "<author><personname><firstname>Ada</firstname><surname>Lovelace</surname>"
+            "</personname></author></biblioentry></bibliolist></footnote></para>"
+        )
+        author = output.find(
+            f'.//{{{HTML}}}dd[@class="endnote-text"]//{{{HTML}}}p[@class="author"]'
+        )
+        assert author is not None
+        self.assertEqual("".join(author.itertext()), "Ada Lovelace")
+
+    def test_cooked_bibliography_preserves_nested_name_punctuation(self) -> None:
+        executable = self.fixed.clone()
+        executable.set_property("!indent", "no")
+        author = (
+            "<biblioset><author><personname><othername>d\u2019</othername>"
+            "<surname>Artagnan</surname></personname></author></biblioset>"
+        )
+        cases = (
+            (f"<bibliomixed>{author}, Memoirs</bibliomixed>", f"{{{HTML}}}p"),
+            (
+                f"<biblioentry><bibliomset>{author}, Memoirs</bibliomset>"
+                "</biblioentry>",
+                f"{{{DBK}}}biblioentry/{{{DBK}}}bibliomset",
+            ),
+        )
+        for source, path in cases:
+            with self.subTest(source=source):
+                output = self.convert(
+                    f"<bibliography>{source}</bibliography>", executable
+                )
+                entry = output.find(f'.//{{{HTML}}}div[@class="bibliography"]/{path}')
+                assert entry is not None
+                self.assertEqual(
+                    "".join(entry.itertext()).strip(), "d\u2019Artagnan, Memoirs"
+                )
+
+    def test_author_name_spacing_with_named_display_rule(self) -> None:
+        # Hub emits named rules as simple class selectors. Hidden padding cannot
+        # supply the only separator between the remaining visible name parts.
+        executable = self.fixed.clone()
+        executable.set_property("!indent", "no")
+        for enabled in ("yes", "no"):
+            executable.set_parameter(
+                "use-css-rules", self.processor.make_string_value(enabled)
+            )
+            for source, hidden_text, visible_text in (
+                (
+                    '<othername role="hidden-name"> M. </othername>',
+                    "Ada Lovelace",
+                    "Ada M. Lovelace",
+                ),
+                (
+                    '<othername><emphasis role="hidden-name"> M. </emphasis></othername>',
+                    "Ada Lovelace",
+                    "Ada M. Lovelace",
+                ),
+                (
+                    '<othername role="hidden-name" css:display="inline"> M. </othername>',
+                    "Ada M. Lovelace",
+                    "Ada M. Lovelace",
+                ),
+            ):
+                with self.subTest(enabled=enabled, source=source):
+                    output = self.convert(
+                        f'<info xmlns:css="{CSS}"><css:rules>'
+                        '<css:rule name="hidden-name" css:display="none"/>'
+                        "</css:rules></info>"
+                        f'<chapter xmlns:css="{CSS}"><info><author><personname>'
+                        f"<firstname>Ada</firstname>{source}<surname>Lovelace</surname>"
+                        "</personname></author></info></chapter>",
+                        executable,
+                    )
+                    styles = output.findall(f"{{{HTML}}}head/{{{HTML}}}style")
+                    self.assertEqual(len(styles), 2 if enabled == "yes" else 1)
+                    if enabled == "yes":
+                        self.assertIn(".hidden-name{", styles[0].text)
+                        self.assertIn("display:none", styles[0].text)
+                    author = output.find(f'.//{{{HTML}}}p[@class="author"]')
+                    assert author is not None
+                    for element in author.findall('.//*[@class="hidden-name"]'):
+                        if (
+                            enabled == "yes"
+                            and element.get("style") != "display: inline"
+                        ):
+                            element.text = None
+                            del element[:]
+                    self.assertEqual(
+                        "".join(author.itertext()),
+                        hidden_text if enabled == "yes" else visible_text,
+                    )
+
+    def test_author_name_spacing_respects_svg_display_override(self) -> None:
+        executable = self.fixed.clone()
+        executable.set_property("!indent", "no")
+        for style, visible in (
+            ("display:inline", True),
+            ("display:none; display:inline", True),
+            ("display:inline; display:none", False),
+            ("display:none !important; display:inline", False),
+        ):
+            with self.subTest(style=style):
+                glyph = (
+                    "<inlinemediaobject><imageobject><imagedata>"
+                    '<svg xmlns="http://www.w3.org/2000/svg" display="none" '
+                    f'style="{style}"><path d="M0 0h3v4H0z"/></svg>'
+                    "</imagedata></imageobject></inlinemediaobject>"
+                )
+                output = self.convert(
+                    "<chapter><info><author><personname>"
+                    f"<firstname>Ada&#xA0;{glyph}</firstname><surname>Lovelace</surname>"
+                    "</personname></author></info></chapter>",
+                    executable,
+                )
+                author = output.find(f'.//{{{HTML}}}p[@class="author"]')
+                assert author is not None
+                self.assertEqual(
+                    "".join(author.itertext()),
+                    "Ada\u00a0 Lovelace" if visible else "Ada\u00a0Lovelace",
+                )
 
     def test_pristine_baseline_negative_control(self):
         if self.baseline is None:

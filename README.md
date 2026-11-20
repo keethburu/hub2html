@@ -23,6 +23,23 @@ and invoke `hub2htm:convert` (`http://transpect.io/hub2htm`).
 
 Read the converted XHTML from the `result` port.
 
+### Author names
+
+Hub2HTML separates visible structured author name parts with spaces, including
+first, middle, and final `othername` components, while preserving authored
+whitespace and line breaks. This applies to authors directly under `info`,
+`biblioentry`, or `biblioset`, authors in an `authorgroup` directly under those
+containers, and authors in their `revhistory/revision` metadata. Names in
+running prose, cooked bibliographies (`bibliomixed` or `bibliomset`, including
+nested metadata), and standalone revision histories in chapter content or
+endnotes retain their existing spacing.
+
+Spacing accounts for `display: none` in emitted inline styles, as well as simple
+named Hub classes when `use-css-rules` is `yes` (the default). Inline `display`
+overrides are respected. A hidden, padded middle name therefore leaves the visible
+name as `Ada Lovelace`. External stylesheets and arbitrary CSS selectors are
+not resolved when determining name boundaries.
+
 ## Contributing
 
 See the [regression test guide](tests/README.md) for setup and commands.
