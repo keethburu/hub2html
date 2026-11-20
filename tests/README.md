@@ -28,9 +28,9 @@ lineage punctuation, empty parts, inline formatting and language, graphics,
 hidden content, and metadata revision authors. Compatibility cases cover prose
 names and cooked bibliography punctuation.
 
-The hidden-name cases check the inline declarations and simple named Hub
-classes emitted by the converter, including disabled Hub rules and inline
-`display` overrides. SVG display overrides are covered independently.
+The styled-name transformation check verifies that CSS declarations and named
+Hub rules do not change the structural separators. Browser checks own the
+visibility and whitespace expectations.
 
 ### Real browser assertions
 
@@ -48,14 +48,14 @@ node tests/browser_spacing.mjs "$output/manifest.json"
 ```
 
 CI runs both commands, including the pristine transformation negative control.
-The 52 browser fixtures cover CSS visibility, whitespace collapsing, preserved
-whitespace modes, NBSP/narrow NBSP, breaks, tabs, nonvisual references and SVG
+The 24 browser fixtures cover normal whitespace collapsing, preserved spaces,
+NBSP/narrow NBSP, breaks, tabs, styled components, nonvisual references and SVG
 overrides. Expected strings are explicit in `browser_spacing.json`; the runner
 reads Chrome's `innerText` without stripping or normalizing whitespace.
 Existing transformation assertions continue to check serialized text,
 semantics, markup, language and scope controls. See the
-[design note](author-name-spacing.md) for the consumer audit, rejected
-simplifications and limits of the retained behavior.
+[spacing contract](author-name-spacing.md) for upstream behavior and serialized
+text compatibility.
 
 The `othername` addition derives from the corresponding change in
 [the upstream commit](https://github.com/transpect/hub2html/commit/0b2b1ff7e199562f0995b9764d21d58d2cec64d2).

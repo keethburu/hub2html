@@ -25,30 +25,20 @@ Read the converted XHTML from the `result` port.
 
 ### Author names
 
-Hub2HTML separates visible structured author name parts with spaces, including
-first, middle, and final `othername` components, while preserving authored
-whitespace and line breaks. This applies to authors directly under `info`,
-`biblioentry`, or `biblioset`, authors in an `authorgroup` directly under those
-containers, and authors in their `revhistory/revision` metadata. Names in
-running prose, cooked bibliographies (`bibliomixed` or `bibliomset`, including
-nested metadata), and standalone revision histories in chapter content or
-endnotes retain their existing spacing.
+Hub2HTML uses upstream's simple rule: each structured name component with a
+following sibling element receives an ordinary space. This includes metadata
+`othername` components; their inline formatting and language are preserved.
+The additional `othername` handling is limited to authors directly or in an
+`authorgroup` under `info`, `biblioentry` or `biblioset`, and their revision
+authors. Prose and cooked bibliography behavior remains unchanged.
 
-Spacing accounts for `display: none` in emitted inline styles, as well as simple
-named Hub classes when `use-css-rules` is `yes` (the default). Inline `display`
-overrides are respected. A hidden, padded middle name therefore leaves the visible
-name as `Ada Lovelace`. External stylesheets and arbitrary CSS selectors are
-not resolved when determining name boundaries.
-
-The spacing contract concerns browser-visible output under those supported
-visibility rules. Authored spaces, nonbreaking spaces, narrow nonbreaking
-spaces, tabs and breaks retain their own behavior under the consuming
-stylesheet's `white-space` setting. Serialized XHTML may contain hidden text
-and whitespace that a browser collapses; extracting all text nodes is not a
-substitute for rendering. Existing serialized-text regression checks remain
-in place, and this follow-up changes no production XHTML. See the
-[spacing design note](tests/author-name-spacing.md) for the consumer audit,
-browser checks and the reasons for retaining the current implementation.
+The browser handles CSS visibility and whitespace collapsing. XSLT neither
+predicts visibility nor deduplicates authored separators: NBSP/narrow NBSP,
+tabs, breaks and punctuation are retained alongside the structural spaces.
+Empty or hidden parts can leave additional spaces under preserving whitespace
+modes, and comma-led lineage retains upstream's space before the comma.
+See the [spacing contract](tests/author-name-spacing.md) for serialized-text
+compatibility and browser coverage.
 
 ## Contributing
 

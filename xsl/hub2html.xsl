@@ -626,59 +626,7 @@
   </xsl:template>
 
   <xsl:template match="dbk:personname" mode="hub2htm-default">
-    <xsl:choose>
-      <xsl:when test="hub2htm:uses-automatic-name-spacing(.)">
-        <xsl:variable name="image-prefix" select="concat($image-path, '/')"/>
-        <!-- Only the simple named classes emitted by this converter participate.
-             External stylesheets and arbitrary CSS selectors are not resolved. -->
-        <xsl:variable name="name-rules" select="/*/dbk:info/css:rules/css:rule
-          [$use-css-rules eq 'yes'][matches(@name, '^[\w-]+$')]"/>
-        <xsl:variable name="parts" as="map(*)*">
-          <xsl:for-each select="node()">
-            <xsl:variable name="rendered" as="node()*">
-              <xsl:apply-templates select="." mode="#current"/>
-            </xsl:variable>
-            <xsl:variable name="visible" select="$rendered ! descendant-or-self::node()
-              [self::text() or self::html:br or self::svg:svg or self::html:img[
-                normalize-space(if ($overwrite-image-paths eq 'yes' and starts-with(@src, $image-prefix))
-                                then substring-after(@src, $image-prefix) else @src)]]
-              [not(ancestor::svg:svg or ancestor-or-self::*[
-                self::dbk:indexterm or self::dbk:footnote
-                or (let $classes := tokenize(@class, '\s+'),
-                        $declarations := (
-                          $name-rules[@name = $classes]/@css:display/string(),
-                          tokenize(@style, ';')[matches(., '^\s*display\s*:', 'i')]
-                            ! replace(., '^\s*display\s*:\s*', '', 'i')),
-                        $important := $declarations[matches(., '!\s*important\s*$', 'i')],
-                        $display := (if (exists($important)) then $important[last()]
-                                     else $declarations[last()])
-                    return lower-case(normalize-space(replace(
-                      string(($display, self::svg:svg/@display)[1]),
-                      '!\s*important\s*$', '', 'i'))) = 'none')])]"/>
-            <xsl:sequence select="map{'source': ., 'rendered': $rendered,
-                                      'first': $visible[1], 'last': $visible[last()]}"/>
-          </xsl:for-each>
-        </xsl:variable>
-        <xsl:for-each select="$parts">
-          <xsl:variable name="left-edge" select="?last"/>
-          <xsl:variable name="next" select="subsequence($parts, position() + 1)[?first][1]"/>
-          <xsl:variable name="right-edge" select="$next?first"/>
-          <xsl:sequence select="?rendered"/>
-          <xsl:if test="?source/(self::dbk:firstname | self::dbk:givenname | self::dbk:surname | self::dbk:honorific | self::dbk:othername)
-                        and $left-edge and $right-edge
-                        and not($next?source/self::text()
-                                or matches($left-edge/self::text(), '[\s\p{Z}]$')
-                                or matches($right-edge/self::text(), '^[\s\p{Z}]')
-                                or ($left-edge | $right-edge)/self::html:br
-                                or ($next?source/self::dbk:lineage and starts-with($right-edge/self::text(), ',')))">
-            <xsl:text> </xsl:text>
-          </xsl:if>
-        </xsl:for-each>
-      </xsl:when>
-      <xsl:otherwise>
-        <xsl:apply-templates mode="#current"/>
-      </xsl:otherwise>
-    </xsl:choose>
+    <xsl:apply-templates mode="#current"/>
     <xsl:value-of select="if (following-sibling::*) then ', ' else ''"/>
   </xsl:template>
 
@@ -710,9 +658,7 @@
         <xsl:apply-templates mode="#current"/>
       </xsl:otherwise>
     </xsl:choose>
-    <xsl:if test="following-sibling::* and not(hub2htm:uses-automatic-name-spacing(parent::dbk:personname))">
-      <xsl:text> </xsl:text>
-    </xsl:if>
+    <xsl:value-of select="if (following-sibling::*) then ' ' else ''"/>
   </xsl:template>
 
   <xsl:template match="dbk:orgname | dbk:street" mode="hub2htm-default">
