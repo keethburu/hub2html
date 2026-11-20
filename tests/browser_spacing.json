@@ -1,0 +1,130 @@
+[
+  {
+    "name": "first-othername",
+    "parts": "<othername>Ada</othername><surname>Lovelace</surname>",
+    "expected": "Ada Lovelace"
+  },
+  {
+    "name": "middle-othername",
+    "parts": "<firstname>Ada</firstname><othername>M.</othername><surname>Lovelace</surname>",
+    "expected": "Ada M. Lovelace"
+  },
+  {
+    "name": "final-othername",
+    "parts": "<firstname>Ada</firstname><surname>Lovelace</surname><othername>Byron</othername>",
+    "expected": "Ada Lovelace Byron"
+  },
+  {
+    "name": "empty",
+    "parts": "<firstname>Ada</firstname><othername/><surname>Lovelace</surname>",
+    "expected": "Ada Lovelace"
+  },
+  {
+    "name": "inline-hidden",
+    "parts": "<firstname>Ada</firstname><othername css:display=\"none\"> M. </othername><surname>Lovelace</surname>",
+    "expected": "Ada Lovelace"
+  },
+  {
+    "name": "hidden-descendant",
+    "parts": "<firstname>Ada</firstname><othername><emphasis css:display=\"none\"> M. </emphasis></othername><surname>Lovelace</surname>",
+    "expected": "Ada Lovelace"
+  },
+  {
+    "name": "named-hidden",
+    "parts": "<firstname>Ada</firstname><othername role=\"hidden-name\"> M. </othername><surname>Lovelace</surname>",
+    "expected": "Ada Lovelace"
+  },
+  {
+    "name": "hidden-pre",
+    "parts": "<firstname>Ada</firstname><othername role=\"hidden-name\"> M. </othername><surname>Lovelace</surname>",
+    "expected": "Ada  Lovelace",
+    "white_space": "pre"
+  },
+  {
+    "name": "authored-pre",
+    "parts": "<firstname>Ada </firstname><othername> M. </othername><surname>Lovelace</surname>",
+    "expected": "Ada   M.  Lovelace",
+    "white_space": "pre"
+  },
+  {
+    "name": "inline-override",
+    "parts": "<firstname>Ada</firstname><othername role=\"hidden-name\" css:display=\"inline\"> M. </othername><surname>Lovelace</surname>",
+    "expected": "Ada M. Lovelace"
+  },
+  {
+    "name": "disabled-rules",
+    "parts": "<firstname>Ada</firstname><othername role=\"hidden-name\"> M. </othername><surname>Lovelace</surname>",
+    "expected": "Ada M. Lovelace",
+    "use_css_rules": "no"
+  },
+  {
+    "name": "nbsp",
+    "parts": "<firstname>Ada&#xA0;</firstname><surname>Lovelace</surname>",
+    "expected": "Ada  Lovelace"
+  },
+  {
+    "name": "narrow-nbsp",
+    "parts": "<firstname>Ada&#x202F;</firstname><surname>Lovelace</surname>",
+    "expected": "Ada  Lovelace"
+  },
+  {
+    "name": "lineage",
+    "parts": "<othername>John</othername><lineage>, Jr.</lineage>",
+    "expected": "John , Jr."
+  },
+  {
+    "name": "break-left",
+    "parts": "<othername>M.<br/></othername><surname>Lovelace</surname>",
+    "expected": "M.\nLovelace"
+  },
+  {
+    "name": "break-right",
+    "parts": "<othername>M.</othername><surname><br/>Lovelace</surname>",
+    "expected": "M.\nLovelace"
+  },
+  {
+    "name": "tab-pre",
+    "parts": "<othername>M.<tab/></othername><surname>Lovelace</surname>",
+    "expected": "M.\t Lovelace",
+    "white_space": "pre"
+  },
+  {
+    "name": "language-markup",
+    "parts": "<firstname>Ada</firstname><othername xml:lang=\"ja\"><emphasis role=\"Name\">花子</emphasis></othername><surname>Yamada</surname>",
+    "expected": "Ada 花子 Yamada"
+  },
+  {
+    "name": "index-between",
+    "parts": "<firstname>Ada</firstname><indexterm><primary>Lovelace</primary></indexterm><surname>Lovelace</surname>",
+    "expected": "Ada Lovelace"
+  },
+  {
+    "name": "note-nbsp",
+    "parts": "<othername>M.&#xA0;<footnote><para>Former pen name.</para></footnote></othername><surname>Lovelace</surname>",
+    "expected": "M.  Lovelace"
+  },
+  {
+    "name": "svg-inline",
+    "parts": "<firstname>Ada&#xA0;<inlinemediaobject><imageobject><imagedata><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"3\" height=\"4\" display=\"none\" style=\"display:inline\"><path d=\"M0 0h3v4H0z\"/></svg></imagedata></imageobject></inlinemediaobject></firstname><surname>Lovelace</surname>",
+    "expected": "Ada  Lovelace",
+    "visible_svg": 1
+  },
+  {
+    "name": "svg-important",
+    "parts": "<firstname>Ada&#xA0;<inlinemediaobject><imageobject><imagedata><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"3\" height=\"4\" display=\"none\" style=\"display:none !important; display:inline\"><path d=\"M0 0h3v4H0z\"/></svg></imagedata></imageobject></inlinemediaobject></firstname><surname>Lovelace</surname>",
+    "expected": "Ada  Lovelace",
+    "visible_svg": 0
+  },
+  {
+    "name": "hidden-leading-pre",
+    "parts": "<othername css:display=\"none\"> M. </othername><surname>Lovelace</surname>",
+    "expected": " Lovelace",
+    "white_space": "pre"
+  },
+  {
+    "name": "hidden-trailing-pre",
+    "parts": "<firstname>Ada</firstname><othername css:display=\"none\"> M. </othername>",
+    "expected": "Ada ",
+    "white_space": "pre"
+  }
+]

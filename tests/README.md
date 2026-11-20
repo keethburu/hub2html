@@ -3,7 +3,7 @@
 ## Local setup
 
 Check out `transpect/xslt-util` at the revision pinned in the
-[CI workflow](../.github/workflows/title-priority.yml#L22-L27). Use a Python
+[CI workflow](../.github/workflows/title-priority.yml#L22-L27). Use a Python 3.11+
 environment to install the pinned SaxonC-HE dependency and run the suite.
 Run these commands from the repository root.
 
@@ -22,20 +22,40 @@ precedence. The root language test checks that the converter copies the source
 root's `xml:lang` value to `lang` on the XHTML `<html>` element. If the source
 root has no `xml:lang`, the XHTML root has no `lang` attribute.
 
-The [author-name spacing contract](../README.md#author-names) is covered by
+The [author-name spacing contract](author-name-spacing.md) is covered by
 cases for first, middle, and final `othername` components, authored whitespace,
 lineage punctuation, empty parts, inline formatting and language, graphics,
 hidden content, and metadata revision authors. Compatibility cases cover prose
 names and cooked bibliography punctuation.
 
-The hidden-name cases check the inline declarations and simple named Hub
-classes emitted by the converter, including disabled Hub rules and inline
-`display` overrides. SVG display overrides are covered independently.
+The styled-name transformation check verifies that CSS declarations and named
+Hub rules do not change the structural separators. Browser checks own the
+visibility and whitespace expectations.
 
-The `othername` addition derives from the corresponding change in
-[the upstream commit](https://github.com/transpect/hub2html/commit/0b2b1ff7e199562f0995b9764d21d58d2cec64d2).
-The fork retains its existing title, language, abstract, heading-depth, and
-subtitle behavior.
+### Real browser assertions
+
+Export the additional browser fixtures with the same Saxon-HE runner, then
+run their rendered-text and SVG assertions through Chrome. Node/npm and a
+Chrome installation are required; the runner uses the pinned
+`chrome-devtools-axi@0.1.46` CLI. Its named session defaults to
+`hub2html-spacing`; set `CHROME_DEVTOOLS_AXI_SESSION` to isolate concurrent runs.
+Use a temporary directory outside the checkout for generated output.
+
+```sh
+output=$(mktemp -d)
+python tests/title_priority.py --xslt-util /path/to/xslt-util --browser-output "$output"
+node tests/browser_spacing.mjs "$output/manifest.json"
+```
+
+CI runs both commands, including the pristine transformation negative control.
+The browser fixtures cover normal whitespace collapsing, preserved spaces,
+NBSP/narrow NBSP, breaks, tabs, styled components, nonvisual references and SVG
+overrides. Expected strings are explicit in `browser_spacing.json`; the runner
+reads Chrome's `innerText` without stripping or normalizing whitespace.
+Existing transformation assertions continue to check serialized text,
+semantics, markup, language and scope controls. See the
+[spacing contract](author-name-spacing.md) for upstream behavior and serialized
+text compatibility.
 
 ## CI negative control
 
