@@ -2,14 +2,15 @@
 
 Name handling follows the original transpect implementation at
 [5417ccf](https://github.com/transpect/hub2html/commit/5417ccf4a859386866cd6db2a4fdc0a9ccff9b66):
-process the `personname` children and add an ordinary space after a name
-component that has a following sibling element. `othername` was added to this
-upstream rule in [0b2b1ff](https://github.com/transpect/hub2html/commit/0b2b1ff7e199562f0995b9764d21d58d2cec64d2).
+process the `personname` children directly and add an ordinary space after
+`firstname`, `givenname`, `surname` and `honorific` when a following sibling
+element exists. `othername` was added to this upstream rule in
+[0b2b1ff](https://github.com/transpect/hub2html/commit/0b2b1ff7e199562f0995b9764d21d58d2cec64d2).
 This fork keeps its metadata-only `othername` scope and its span wrapper for
 language, styling and inline markup. No other upstream rendering changes are
 imported.
 
-XSLT does not predict CSS visibility or deduplicate separators. Authored
+Name spacing does not predict CSS visibility or deduplicate separators. Authored
 whitespace, NBSP/narrow NBSP, tabs, breaks and punctuation remain in the
 output, alongside upstream's structural spaces. Thus `John` followed by
 `, Jr.` yields `John , Jr.`; an authored NBSP can be followed by an additional

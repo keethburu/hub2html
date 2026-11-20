@@ -25,20 +25,10 @@ Read the converted XHTML from the `result` port.
 
 ### Author names
 
-Hub2HTML uses upstream's simple rule: each structured name component with a
-following sibling element receives an ordinary space. This includes metadata
-`othername` components; their inline formatting and language are preserved.
-The additional `othername` handling is limited to authors directly or in an
-`authorgroup` under `info`, `biblioentry` or `biblioset`, and their revision
-authors. Prose and cooked bibliography behavior remains unchanged.
-
-The browser handles CSS visibility and whitespace collapsing. XSLT neither
-predicts visibility nor deduplicates authored separators: NBSP/narrow NBSP,
-tabs, breaks and punctuation are retained alongside the structural spaces.
-Empty or hidden parts can leave additional spaces under preserving whitespace
-modes, and comma-led lineage retains upstream's space before the comma.
-See the [spacing contract](tests/author-name-spacing.md) for serialized-text
-compatibility and browser coverage.
+Structured metadata author names use upstream's spacing rule, with CSS
+visibility and whitespace collapsing handled by the browser. See the
+[spacing contract](tests/author-name-spacing.md) for separator rules, scope,
+serialized-text compatibility and limitations.
 
 ## Contributing
 
