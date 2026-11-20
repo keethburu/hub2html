@@ -32,6 +32,31 @@ The hidden-name cases check the inline declarations and simple named Hub
 classes emitted by the converter, including disabled Hub rules and inline
 `display` overrides. SVG display overrides are covered independently.
 
+### Real browser assertions
+
+Export the additional browser fixtures with the same Saxon-HE runner, then
+run their rendered-text and SVG assertions through Chrome. Node/npm and a
+Chrome installation are required; the runner uses the pinned
+`chrome-devtools-axi@0.1.46` CLI. Its named session defaults to
+`hub2html-spacing`; set `CHROME_DEVTOOLS_AXI_SESSION` to isolate concurrent runs.
+Use a temporary directory outside the checkout for generated output.
+
+```sh
+output=$(mktemp -d)
+python tests/title_priority.py --xslt-util /path/to/xslt-util --browser-output "$output"
+node tests/browser_spacing.mjs "$output/manifest.json"
+```
+
+CI runs both commands, including the pristine transformation negative control.
+The 52 browser fixtures cover CSS visibility, whitespace collapsing, preserved
+whitespace modes, NBSP/narrow NBSP, breaks, tabs, nonvisual references and SVG
+overrides. Expected strings are explicit in `browser_spacing.json`; the runner
+reads Chrome's `innerText` without stripping or normalizing whitespace.
+Existing transformation assertions continue to check serialized text,
+semantics, markup, language and scope controls. See the
+[design note](author-name-spacing.md) for the consumer audit, rejected
+simplifications and limits of the retained behavior.
+
 The `othername` addition derives from the corresponding change in
 [the upstream commit](https://github.com/transpect/hub2html/commit/0b2b1ff7e199562f0995b9764d21d58d2cec64d2).
 The fork retains its existing title, language, abstract, heading-depth, and

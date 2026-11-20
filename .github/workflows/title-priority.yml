@@ -13,7 +13,7 @@ permissions:
 jobs:
   title-priority:
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -35,4 +35,6 @@ jobs:
           baseline="$RUNNER_TEMP/hub2html-baseline"
           mkdir -p "$baseline"
           git archive ee25fb16ce4819ef6ab880889e9761d8e5768ef3 | tar -x -C "$baseline"
-          python tests/title_priority.py --xslt-util .test-deps/xslt-util --baseline-root "$baseline"
+          python tests/title_priority.py --xslt-util .test-deps/xslt-util --baseline-root "$baseline" --browser-output "$RUNNER_TEMP/browser-spacing"
+      - name: Check author spacing in Chrome
+        run: node tests/browser_spacing.mjs "$RUNNER_TEMP/browser-spacing/manifest.json"

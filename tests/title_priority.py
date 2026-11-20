@@ -1,10 +1,12 @@
 """Check XHTML output through hub2html's main template."""
 
 import argparse
+import json
 import tempfile
 import unittest
 import xml.etree.ElementTree as ET
 from pathlib import Path
+from typing import NotRequired, TypedDict
 from xml.sax.saxutils import quoteattr
 
 from saxonche import PySaxonApiError, PySaxonProcessor, PyXsltExecutable
@@ -17,6 +19,15 @@ STRUCTURES = (
     "toc", "acknowledgements", "preface", "chapter", "colophon",
     "appendix", "part", "partintro", "book",
 )
+
+
+class BrowserFixture(TypedDict):
+    name: str
+    parts: str
+    expected: str
+    white_space: NotRequired[str]
+    use_css_rules: NotRequired[str]
+    visible_svg: NotRequired[int]
 
 
 def hub(content: str, *, language: str | None = "en") -> str:
@@ -656,11 +667,60 @@ class TitlePriority(unittest.TestCase):
         output = self.convert('', self.baseline)
         self.assertEqual(output.find(f'{{{HTML}}}head/{{{HTML}}}title').text, 'Document metadata')
 
+    def test_browser_spacing_fixtures(self) -> None:
+        """Generate real converter output; browser_spacing.mjs checks its layout."""
+        # This is a checked-in test table, not a public input interface.
+        fixtures: list[BrowserFixture] = json.loads(
+            Path(__file__).with_name("browser_spacing.json").read_text(encoding="utf-8")
+        )
+        manifest: list[dict[str, object]] = []
+        for fixture in fixtures:
+            with self.subTest(name=fixture["name"]):
+                executable = self.fixed.clone()
+                executable.set_property("!indent", "no")
+                executable.set_parameter(
+                    "use-css-rules",
+                    self.processor.make_string_value(
+                        fixture.get("use_css_rules", "yes")
+                    ),
+                )
+                output = self.convert(
+                    f'<info xmlns:css="{CSS}"><css:rules>'
+                    '<css:rule name="hidden-name" css:display="none"/>'
+                    "</css:rules></info>"
+                    f'<chapter xmlns:css="{CSS}"><info><author><personname>'
+                    f"{fixture['parts']}</personname></author></info></chapter>",
+                    executable,
+                )
+                authors = output.findall(f'.//{{{HTML}}}p[@class="author"]')
+                self.assertEqual(len(authors), 1)
+                # Apply the whitespace environment after conversion, as an EPUB
+                # reader or consuming stylesheet would. Do not normalize text.
+                authors[0].set(
+                    "style", f"white-space: {fixture.get('white_space', 'normal')}"
+                )
+                if OPTIONS.browser_output:
+                    OPTIONS.browser_output.mkdir(parents=True, exist_ok=True)
+                    path = OPTIONS.browser_output / f"{fixture['name']}.xhtml"
+                    ET.ElementTree(output).write(
+                        path, encoding="utf-8", xml_declaration=True
+                    )
+                    manifest.append({**fixture, "url": path.resolve().as_uri()})
+        if OPTIONS.browser_output:
+            (OPTIONS.browser_output / "manifest.json").write_text(
+                json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8"
+            )
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--xslt-util', type=Path, required=True)
-    parser.add_argument('--source-root', type=Path, default=Path(__file__).resolve().parents[1])
-    parser.add_argument('--baseline-root', type=Path)
+    parser.add_argument("--xslt-util", type=Path, required=True)
+    parser.add_argument(
+        "--source-root", type=Path, default=Path(__file__).resolve().parents[1]
+    )
+    parser.add_argument("--baseline-root", type=Path)
+    parser.add_argument(
+        "--browser-output", type=Path, help="export fixtures for browser_spacing.mjs"
+    )
     OPTIONS = parser.parse_args()
     unittest.main(argv=[__file__], verbosity=2)

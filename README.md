@@ -40,6 +40,16 @@ overrides are respected. A hidden, padded middle name therefore leaves the visib
 name as `Ada Lovelace`. External stylesheets and arbitrary CSS selectors are
 not resolved when determining name boundaries.
 
+The spacing contract concerns browser-visible output under those supported
+visibility rules. Authored spaces, nonbreaking spaces, narrow nonbreaking
+spaces, tabs and breaks retain their own behavior under the consuming
+stylesheet's `white-space` setting. Serialized XHTML may contain hidden text
+and whitespace that a browser collapses; extracting all text nodes is not a
+substitute for rendering. Existing serialized-text regression checks remain
+in place, and this follow-up changes no production XHTML. See the
+[spacing design note](tests/author-name-spacing.md) for the consumer audit,
+browser checks and the reasons for retaining the current implementation.
+
 ## Contributing
 
 See the [regression test guide](tests/README.md) for setup and commands.
